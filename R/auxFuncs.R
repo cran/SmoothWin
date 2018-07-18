@@ -1,13 +1,16 @@
-.onAttach <- function( lib, pkg ) {
+.onAttach <- function(lib, pkg) {
   packageStartupMessage(
     paste0(
       '\n ========================================================================',
       '\n If you have any question about this package contact me on               ',
-      '\n      hamedhaseli@gmail.com  or visit www.hamedhaseli.webs.com           ',
+      '\n      hamedhm@ebi.ac.uk                                                  ',
       '\n *** This project is supported by European Bioinformatic Institute (EBI) ',
+      '\n *** https://www.mousephenotype.org/                                     ',
       '\n ========================================================================'
     ),
-    domain = NULL,  appendLF = TRUE )
+    domain = NULL,
+    appendLF = TRUE
+  )
 }
 ###########
 expF = function(x, k, l, m) {
@@ -46,6 +49,7 @@ expWeight = function(t, k, l, m = 0, plot = FALSE , ...) {
       }
     }
   }
+  s = s / ifelse(max(s, na.rm = TRUE) != 0, max(s, na.rm = TRUE), 1)
   if (plot) {
     plot(
       t,
@@ -82,132 +86,40 @@ expWeight = function(t, k, l, m = 0, plot = FALSE , ...) {
   return(s)
 }
 ###########
-penCPD = function(x,
-                  plot      = FALSE,
-                  threshold = .01,
-                  method    = 'enet',
-                  criteria  = 'AICc',
-                  ...) {
-  #requireNamespace('msgps', 'msgps')
-  x  = as.vector(x)
-  lx = length(x)
-  m  = matrix(1, nrow = lx, ncol = lx)
-  for (i in 2:(lx)) {
-    m[, i] = c(rep(0, i - 1), rep(1, (lx - i + 1)))
-  }
-  r = msgps::msgps(
-    X = m,
-    y = x,
-    intercept = FALSE,
-    penalty = method
-  )
-  if (plot)
-    plot(r, ...)
-  nzc = which(abs(coef(r)[, criteria]) > threshold)
-  return(nzc)
-}
-###########
-scale21 <- function(x) {
-  if (max(x, na.rm = TRUE) == min(x, na.rm = TRUE)) {
-    message('max and min are the same!')
-    return(x)
-  } else{
-    return((x - min(x, na.rm = TRUE)) / (max(x, na.rm = TRUE) - min(x, na.rm = TRUE)))
-  }
-}
-###########
-gridSearch = function(t,
-                      x                 ,
-                      y                 ,
-                      m = mean(y)       ,
-                      l = 1             ,
-                      k = 1             ,
-                      plot = TRUE       ,
-                      mutInd = NULL     ,
-                      threshold = 10 ^ -18,
-                      ...) {
-  lk = length(k)
-  ll = length(l)
-  n  = length(y)
-  m  = unique(m)
-  lmodel = list()
-  wmat   = matrix(0, ncol = n + 1   , nrow = ll * lk) # 1 for index
-  rmat   = matrix(0, ncol = 8 + ncol(x) , nrow = ll * lk)
-  colnames(rmat)          = colnames(rmat, do.NULL = FALSE)
-  colnames(rmat)[1:7]     = c('Ind',
-                              'Obs.in.Interval',
-                              'AIC',
-                              'BIC',
-                              'residual.SD',
-                              'k',
-                              'l')
-  if (!is.null(colnames(x))) {
-    colnames(rmat)[-c(1:7)] = c('Int', colnames(x))
-  } else{
-    colnames(rmat)[-c(1:7)] = paste('x.', 0:ncol(x), sep = '')
-    colnames(rmat)            = colnames(rmat, do.NULL = FALSE, prefix = 'x.')
-  }
-  
-  counter = 1
-  for (lp in l) {
-    for (kp in k) {
-      weight = expWeight(
-        t = t,
-        k = kp,
-        l = lp,
-        m = m,
-        plot = 0
-      )
-      inn = abs(weight) > threshold
-      if (plot) {
-        plot(
-          t,
-          y,
-          col = inn + 1,
-          pch = inn + 1,
-          main = paste(
-            'l=',
-            round(lp, 2),
-            ', k=',
-            round(kp, 2),
-            ', #=',
-            sum(inn),
-            sep = ''
-          ),
-          xlab = 'Time',
-          ylab = 'Response',
-          ...
-        )
-        if (!is.null(mutInd))
-          points(t[mutInd], y[mutInd], col = 3, pch = 19)
-        lines(t,
-              scale21(weight) * (max(y, na.rm = TRUE) - min(y, na.rm = TRUE)) + min(y, na.rm = TRUE),
-              lty = 3)
-        abline(v = m)
-      }
-      slm = lm(
-        y ~ . ,
-        data = data.frame(y = y, x = x),
-        weights  = weight / sum(weight) * (abs(weight) > threshold)
-      )
-      lmodel[[counter]]   = slm
-      rmat  [counter, ]   = c(counter ,
-                              sum(inn),
-                              AIC(slm),
-                              BIC(slm),
-                              sd(resid(slm)),
-                              kp,
-                              lp,
-                              coef(slm))
-      wmat[counter, ]    = c(counter, weight / sum(weight))
-      cat('\r', counter, '|', lk * ll)
-      counter           = counter  + 1
+checkWeightsN <- function(w             ,
+                          t             ,
+                          check = 1     ,
+                          #1 all+nosingle, #2 all without nosingle #0 off
+                          threshold = 10 ^ -18) {
+  n  = length(t)
+  if (!is.null(w) && check > 0) {
+    #&& var(w) > threshold) {
+    r      = 1:n
+    zw     = which(abs(w) > threshold)
+    #### need at least 2 observations in a group
+    if (check == 1) {
+      t      = as.character(t)
+      tz     = table(t[zw])
+      MorTh1 = names(tz)[which(tz > 1)]
+      zw     = zw[t[zw] %in% MorTh1] # no singleDay-singleData
     }
+    if (length(zw) > 0) {
+      r  = r[zw]
+      w  = w[zw] / sum(w[zw])
+    } else{
+      message(
+        '\n * Model weights are ignored! ** weight may be all close to zero *** there may be all dates with single weight [can cause error in the mixed model] **** Setting check = 1 or check = 2 may solve the problem.\n'
+      )
+      w = (w * 0 + 1) / n
+      r = 1:n
+    }
+  } else{
+    r = 1:n
   }
   return(list(
-    weights = wmat,
-    output = as.data.frame(rmat),
-    models = lmodel
+    w = w,
+    wInd = r,
+    NoZeWe = sum(w > threshold)
   ))
 }
 ###########
@@ -218,4 +130,59 @@ lseq = function (from = 1,
 {
   r = exp(seq(log(from) / adj, log(to), length.out = length.out))
   return(r)
+}
+###########
+msg = function(args, ...) {
+  message(
+    '\nMinimum observations in the model:',
+    '\n Min observations around each experiment date: ',
+    args$min.obs / length(unique(args$t[args$m])),
+    '\n Min observations required: ' ,
+    args$min.obs + length(args$m),
+    '\n  The number of modes: ',
+    length(unique(args$t[args$m])),
+    '\n  The time      range: ',
+    paste(round(range(args$t), 3), collapse = ' to '),
+    '\n  The bandwith  range: ',
+    paste(round(range(args$l), 3), collapse = ' to '),
+    ' [',
+    length(args$l),
+    ' split]',
+    '\n  The shape     range: ',
+    paste(round(range(args$k), 3), collapse = ' to '),
+    ' [',
+    length(args$k),
+    ' split]',
+    '\n'
+  )
+}
+###########
+tv.test = function(obj, args, name = 'parameter', ...) {
+  if (length(obj$models) > 1) {
+    df = lapply(obj$models, resid)
+    tt = c()
+    for (i in 2:length(obj$models)) {
+      vtl = var.test(df[[i]][obj$weights[[i]] > args$threshold], df[[i - 1]][obj$weights[[i - 1]] > args$threshold])$p.value
+      ttl = t.test  (df[[i]][obj$weights[[i]] > args$threshold], df[[i - 1]][obj$weights[[i - 1]] > args$threshold])$p.value
+      tt[i - 1] = vtl * ttl + vtl  + ttl
+    }
+    #####
+    
+    al       = data.frame(
+      t.pval = c(tt, Inf),
+      ol     = obj$output$ObsInInterval,
+      l      = obj$output[, name]
+    )
+    al       = al[al$ol > args$min.obs + length(args$m),]
+    final   = al$l[which.min(al$t.pval)[1]]
+    # hist(al$t.pval)
+    # abline(v=final)
+    if (length(final) < 1 || is.na(final)) {
+      message(paste('\n An optimal', name, 'is not found. Max value will be used.'))
+      final = NULL
+    }
+  } else{
+    final = NULL
+  }
+  return(final)
 }

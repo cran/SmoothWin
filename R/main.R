@@ -1,221 +1,181 @@
-SmoothWin = function(t                                                ,
-                     x                                                ,
-                     y                                                ,
+SmoothWin = function(object                                           ,
+                     data                                             ,
+                     t                                                ,
                      m                                                ,
-                     l = SmoothWin:::lseq(
-                       from = 1                    ,
-                       to = (max(t) - min(t)) / length(m)  ,
-                       length.out = 51
-                     )                    ,
-                     k = SmoothWin:::lseq(from = 1                    ,
+                     l = function(ignore.me.in.default) {
+                       r = SmoothWin:::lseq(
+                         from = 1                                          ,
+                         to = max(abs(t[m] - min(t)), abs(t[m] - max(t)), 1),
+                         length.out = min(200, max(1, diff(range(
+                           t
+                         ))))
+                       )
+                       r = unique(round(r))
+                       return(r)
+                     },
+                     k = SmoothWin:::lseq(from = .5                   ,
                                           to = 10                     ,
-                                          length.out = 10)            ,
-                     min.obs   = min(length(t) - length(m), 
-                                     log(length(m) * length(t)) * length(unique(m)))        ,
-                     threshold = 10 ^ -8                              ,
-                     criteria  = 'AICc'                               ,
-                     method    = 'enet'                               ,
-                     plot      = FALSE) {
-  min.obs = ceiling(min.obs)
-  k = sort(k[k > 0 & !is.na(k)], decreasing = TRUE)
-  l = sort(l[l > 0 & !is.na(l)])
-  
-  if (length(k) <= 1 | length(l) <= 1)
-    stop('l and k must have at least 2 values length!')
+                                          length.out = 30)            ,
+                     min.obs   = function(ignore.me.in.default) {
+                       lutm = length(unique(t[m]))
+                       r = ifelse(lutm > 1, 35, max(pi * sqrt(length(t)), 35))
+                       r = max(r * lutm, length(m), na.rm = TRUE)
+                       r = min(r, length(t), na.rm = TRUE)
+                       return(r)
+                     }                                                ,
+                     weightFUN = function(x) {
+                       x
+                     }                                                ,
+                     check = 2                                        ,
+                     threshold = 10 ^ -12                             ,
+                     messages  = TRUE,
+                     seed      = 123456                               ,
+                     simple.output = FALSE                            ,
+                     ...) {
+  set.seed(seed)
+  min.obs = ceiling(ifelse(is.function(min.obs), min.obs(), min.obs))
+  l = if (is.function(l)) {
+    l()
+  } else{
+    l
+  }
+  k = if (is.function(k)) {
+    k()
+  } else{
+    k
+  }
+  k       = sort(k[!is.na(k)], decreasing = TRUE)
+  l       = sort(l[!is.na(l)])
+  argg    = c(as.list(environment()), list())
   
   if (length(unique(t[m])) > 10)
     message('More than 10 modes detected. The entire procedure can take a long time!')
   
   if (length(m) > min.obs) {
     stop('min.obs is less than the number of treatments!')
-  } else{
-    cat(
-      '\n ** Minimum observations in the model : (#Treatment =',
-      length(m),
-      ', #Min observations =',
-      min.obs,
-      ') =',
-      min.obs + length(m)
-    )
+  } else {
+    msg(argg)
   }
   ### 1. Determining l
-  cat('\n 1|3 Searching for l ...\n')
-  rl = gridSearch(
-    t = t,
-    x = x,
-    y = y,
-    m = t[m],
-    l = l,
-    k = max(k),
-    mutInd    = m,
-    plot      = 0,
-    threshold = threshold
+  message('\n 1|3 Searching for l ...\n')
+  rl = gridSearchModel(
+    object = object           ,
+    data = data               ,
+    weightFUN = weightFUN     ,
+    check = check             ,
+    t = t                     ,
+    m = t[m]                  ,
+    l = l                     ,
+    k = max(k)                ,
+    threshold = threshold     ,
+    messages = messages       ,
+    onlyOne  = FALSE          ,
+    ...
   )
-  scp1        = scale21(rl$output$residual.SD) * 100
-  if(length(unique(scp1))>1){
-    cpt         = penCPD(
-      scp1,
-      threshold = threshold,
-      criteria = criteria,
-      method = method,
-      plot  = plot,
-      main = 'l - CPD solution path'
-    )
-  }else{
-    cpt  = length(scp1)
-  }
-  finall      = rl$output$l[cpt][which(rl$output$Obs.in.Interval[cpt] >=
-                                         (min.obs + length(m)))][1]
-  if (is.na(finall)) {
-    cat('\n An optimal l is not found. Max l will be used.')
+  finall = tv.test(rl, argg, 'l')
+  if (is.null(finall))
     finall = max(l)
-  }
-  
   ### 2. Determining k
-  cat('\n 2|3 Searching for k ... \n')
-  rk    = gridSearch(
-    t = t,
-    x = x,
-    y = y,
-    m = t[m],
-    l = finall,
-    k = k,
-    plot = 0,
-    mutInd = m,
-    threshold = threshold
+  message('\n 2|3 Searching for k ... \n')
+  rk = gridSearchModel(
+    object = object           ,
+    data = data               ,
+    weightFUN = weightFUN     ,
+    check = check             ,
+    t = t                     ,
+    m = t[m]                  ,
+    l = finall                ,
+    k = k                     ,
+    threshold = threshold     ,
+    messages = messages       ,
+    onlyOne  = FALSE          ,
+    ...
   )
-  scp2 = scale21(rk$output$residual.SD) * 100
-  if(length(unique(scp2))>1){
-    print(scp2)
-    cptk = penCPD(
-      scp2,
-      threshold = threshold,
-      plot  = plot,
-      criteria = criteria,
-      method = method,
-      main = 'k - CPD solution path'
-    )
-  }else{
-    cptk = 1
-  }
-  finalk = rk$output$k[cptk][which(rk$output$Obs.in.Interval[cptk] >=
-                                     (min.obs + length(m)))][1]
-  if (is.na(finalk)) {
-    cat('\n An optimal k is not found. Max k will be used.')
+  finalk = tv.test(rk, argg, 'k')
+  if (is.null(finalk))
     finalk = max(k)
-  }
-  
-  
-  
-  ##### Plots
-  if (plot & !is.na(finall)) {
-    plot(
-      rl$output$l,
-      scale21(rl$output$residual.SD),
-      ylim = c(0, 3),
-      xaxt = 'n',
-      ylab = 'Standardized sd',
-      xlab = 'l',
-      main = paste('Final l = ', round(finall, 5), sep = '')
-    )
-    
-    abline(v = rl$output$l[cpt],
-           col = 'grey',
-           lty = 3)
-    axis(
-      side = 1,
-      at = rl$output$l[cpt],
-      labels = round(rl$output$l[cpt], 2),
-      las = 3
-    )
-    abline(
-      v = finall,
-      col = 2,
-      lwd = 2,
-      lty = 3
-    )
-    text(
-      x      = rl$output$l[cpt],
-      y      = 2 + (cos(rl$output$Ind[cpt] / 2 / pi)),
-      col    = 2 + ((-1) ^ rl$output$Ind[cpt]) ,
-      labels = rl$output$Obs.in.Interval[cpt],
-      cex    = .5
-    )
-    
-  }
-  if (plot & !is.na(finalk)) {
-    plot(k,
-         rk$output$BIC,
-         xlab = 'k',
-         ylab = 'BIC',
-         main = 'k - BIC')
-    abline(v = finalk)
-    
-    plot(
-      rk$output$k,
-      scale21(rk$output$residual.SD),
-      ylim = c(0, 3),
-      xaxt = 'n',
-      ylab = 'Standardized sd',
-      xlab = 'k',
-      main = paste('Final k = ', round(finalk, 5), sep = '')
-    )
-    
-    abline(v = rk$output$k[cptk],
-           col = 'grey',
-           lty = 3)
-    axis(
-      side = 1,
-      at = rk$output$k[cptk],
-      labels = round(rk$output$k[cptk], 2),
-      las = 3
-    )
-    abline(
-      v = finalk,
-      col = 4,
-      lwd = 2,
-      lty = 3
-    )
-    text(
-      x      = rk$output$k[cptk],
-      y      = 2 + (cos(rk$output$Ind[cptk] / 2 / pi)),
-      col    = 2 + ((-1) ^ rk$output$Ind[cptk]) ,
-      labels = rk$output$Obs.in.Interval[cptk],
-      cex    = .5
-    )
-  }
-  
   
   ##### final model
-  cat('\n 3|3 Forming the final model \n')
-  finalr = gridSearch(
-    t = t,
-    x = x,
-    y = y,
-    m = t[m],
-    l = finall,
-    k = finalk ,
-    mutInd = m,
-    plot = plot,
-    threshold = threshold
+  message('\n 3|3 Forming the final model \n')
+  finalr = gridSearchModel(
+    object = object           ,
+    data = data               ,
+    weightFUN = weightFUN     ,
+    check = check             ,
+    t = t                     ,
+    m = t[m]                  ,
+    l = finall                ,
+    k = finalk                ,
+    threshold = threshold     ,
+    messages = messages       ,
+    onlyOne  = TRUE           ,
+    ...
   )
-  finalr$weights = finalr$weights[-1] #Remove index from the final weights
-  return(
-    list(
-      final.k = finalk,
-      final.l = finall,
-      finalModel = finalr,
-      model.l = rl,
-      model.k = rk,
-      x = x,
-      y = y,
-      l = l,
-      k = k,
-      m = m,
-      min.obs   = min.obs,
-      threshold = threshold,
-      plot      = plot
-    )
+  if (simple.output) {
+    rk = rl = NULL
+  }
+  out = list(
+    object  = object,
+    data    = data  ,
+    final.k = finalk,
+    final.l = finall,
+    finalModel = finalr,
+    model.l = rl       ,
+    model.k = rk       ,
+    min.obs = min.obs  ,
+    input   = argg
+  )
+  class(out) = 'SmoothWin'
+  return(out)
+}
+
+
+
+plot.SmoothWin = function(x, ylab = 'Response', ...) {
+  t = x$input$t
+  y = x$data[, all.vars(formula(x$finalModel$models))[1]]
+  ly = length(y)
+  m = x$input$m
+  plot(
+    t,
+    y,
+    xlab = 'Time',
+    ylab = ylab,
+    sub = paste(
+      'l=',
+      round(x$final.l, 2),
+      ', k=',
+      round(x$final.k, 2),
+      ', #=',
+      x$finalModel$output$ObsInInterval,
+      ' [',
+      round(x$finalModel$output$ObsInInterval / ly * 100),
+      '%]',
+      ', MaxBW=',
+      max(x$input$l, na.rm = TRUE),
+      ', MinObs=',
+      x$min.obs,
+      sep = ''
+    ),
+    ...
   )
   
+  abline(v = unique(t[m]),
+         lty = 2,
+         col = 'gray')
+  wp = SmoothWin::expWeight(
+    t = t,
+    k = x$final.k,
+    l = x$final.l,
+    m = unique(t[m]),
+    plot = 0
+  )
+  lines(
+    t,
+    min(y) + wp * (max(y) - min(y)),
+    col = 'gray',
+    lty = 4,
+    lwd = 4
+  )
+  #####
 }

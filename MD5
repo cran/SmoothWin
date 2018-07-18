@@ -1,8 +1,8 @@
-cefa6ceaca5b3da727fdf33a635160e0 *DESCRIPTION
-39c0ba1b1dc30c967697957d53314c03 *NAMESPACE
-b8ec2226298cb91b041d13f4e1ae515c *R/auxFuncs.R
-3cfc1d08c3b44fb52bcdf8c4d6cb21fe *R/main.R
-311f5ab2bc594fcbbc958f4787753435 *man/SmoothWin.Rd
-b5e085d4c9f97d06a1f9d915293edc93 *man/expWeight.Rd
-5232e4782f406e6b22f86cc94925da4c *man/penCPD.Rd
-c0ec5df9edb7ed5ef8894ba1b115dc92 *man/scale21.Rd
+f66bb3630a7cd3ee79328188b06bd587 *DESCRIPTION
+d75cf62c96a58d46c12126e24689870c *NAMESPACE
+148716b824226898b176e7dd25df95ee *R/GridSearchModel.R
+120bb84671decfc3c5d26a120a54460a *R/auxFuncs.R
+d0e922e8ea0c08b545f46bc6f9fa2d68 *R/main.R
+f9c5a79adbfca2fc788bb8a9c2a14c1c *man/SmoothWin.Rd
+83c0701d558c474a6326343324d32ea6 *man/expWeight.Rd
+8213ee4226769aab85791ccb88ec35c0 *man/plot.SmoothWin.Rd

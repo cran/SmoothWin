@@ -20,13 +20,13 @@
     A single value for bandwidth
   }
   \item{m}{
-    Vector. The location of the modes on t
+    Vector. The location of the modes on t (modes are the peak of the windows)
   }
   \item{plot}{
     Logical flag. Set to true shows a plot of the weights.
   }
   \item{\dots}{
-    The parameters that are passed to the plot() function
+    The parameters that can be passed to the plot() function
   }
 }
 \value{
@@ -34,19 +34,52 @@
 }
 
 \author{
-  Hamed Haselimashhadi <hamedhaseli@gmail.com>
+  Hamed Haselimashhadi <hamedhm@ebi.ac.uk>
 }
 
 \seealso{
   \code{\link{SmoothWin}}
 }
 \examples{
+  par(mfrow = c(3, 1))
+  # Example 1 - no merging in windows
   weight = expWeight(
-    t = 1:100,
-    k = 1,
-    l = 5,
-    m = c(25, 50, 75),
-    plot = TRUE
+    t = 1:100                                       ,
+    k = 5                                           ,
+    l = 10                                          ,
+    m = c(25, 50, 75)                               ,
+    plot = TRUE                                     ,
+    ### Passed parameters to the plot function
+    type = 'l'                                      ,
+    lty = 2                                         ,
+    lwd = 3                                         ,
+    main = 'If windows do not intersect, then wont merge!'
+  )
+  # Example 2 - merging in windows
+  weight = expWeight(
+    t = 1:100                                       ,
+    k = 5                                           ,
+    l = 15                                          ,
+    m = c(25, 50, 75)                               ,
+    plot = TRUE                                     ,
+    ### Passed parameters to the plot function
+    type = 'l'                                      ,
+    lty = 2                                         ,
+    lwd = 3                                         ,
+    main = 'If windows intersect, then merge!'
+  )
+  # Example 3 - partial merging in windows
+  weight = expWeight(
+    t = 1:100                                       ,
+    k = 1                                           ,
+    l = 12                                          ,
+    m = c(25, 50, 75)                               ,
+    plot = TRUE                                     ,
+    ### Passed parameters to the plot function
+    type = 'l'                                      ,
+    lty = 2                                         ,
+    lwd = 3                                         ,
+    main = 'If windows intersect with small k, then partially merge!'
   )
 }
 
