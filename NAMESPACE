@@ -1,6 +1,7 @@
 export(
-  SmoothWin    ,
-  expWeight    
+  SmoothWin,
+  expWeight,
+  lseq
 )
 S3method(plot   , SmoothWin)
 
@@ -18,4 +19,6 @@ importFrom("stats", "predict")
 importFrom("Rfast", "rowprods", "comb_n","rowsums")
 importFrom("stats", "na.omit", "shapiro.test")
 importFrom("utils", "packageVersion")
+importFrom("nlme", "lme")
+importFrom("nlme", "gls")
 

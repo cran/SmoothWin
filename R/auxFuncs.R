@@ -6,7 +6,7 @@
       '\n ~> https://www.mousephenotype.org/                                      ',
       '\n ~> Github source code : http://bit.ly/2Zo9s3y                           ',
       '\n ~> If you have any question about this package contact us               ',
-      '\n ~> hamedhm@ebi.ac.uk                                                    ',
+      '\n ~> hamedhaseli@gmail.com                                                    ',
       '\n ========================================================================'
     ),
     domain   = NULL,
@@ -42,7 +42,7 @@ capitalise = function (string)
 check_version = function(pkg_name, min_version) {
   cur_version = packageVersion(pkg_name)
   if(cur_version < min_version) {
-  sprintf("Package %s needs a newer version, 
+  sprintf("Package %s needs a newer version,
                found %s, need at least %s", pkg_name, cur_version, min_version)
     stop()
   }
@@ -103,7 +103,7 @@ expWeight = function(t                         ,
   s = 0
   for (j in 1:lm) {
     val = sapply(
-      X = comb_n(lm,  j, simplify = FALSE), 
+      X = comb_n(lm,  j, simplify = FALSE),
       FUN = function(i) {
         return( rowprods(r[, i, drop = FALSE]))
       }
@@ -149,7 +149,7 @@ expWeight = function(t                         ,
   # Plot output
   ############################################################
   if (plot) {
-    plot.weight(
+    plot_weight(
       weight = s      ,
       t = t           ,
       m = m           ,
@@ -161,7 +161,7 @@ expWeight = function(t                         ,
 }
 
 # Plot weights (only used in expWeight() function)
-plot.weight = function(weight, t, m, l, ...) {
+plot_weight = function(weight, t, m, l, ...) {
   m  = unique(m)
   lm = length(m)
   plot(
@@ -310,7 +310,7 @@ shapiro.test0 = function(x) {
   x   = na.omit(x)
   lx  = length(x)
   lqx = length(unique(x))
-  
+
   if (lx > 3 && lx < 5000 && is.numeric(x) && lqx > 1) {
     r = shapiro.test(x)$p.value
   } else{
@@ -388,7 +388,7 @@ tv.test = function(obj                           ,
       # Normality
       nntp  = shapiro.test0(dfp[[i]][oi >= thresh])
       nntl  = shapiro.test0(dfv[[i]][oi >= thresh])
-      
+
       if (sum(pvalThreshold) <= 0) {
         tt[i - 1] =
           sensitivity[4] * (nntl + nntp) +
@@ -404,7 +404,7 @@ tv.test = function(obj                           ,
           (x > thresh) + (x <= thresh) * x
         }
         tt[i - 1] =
-          sensitivity[4] * (f01(nntp , pvalThreshold[4])  + 
+          sensitivity[4] * (f01(nntp , pvalThreshold[4])  +
                             f01(nntl , pvalThreshold[4])) +
           sensitivity[3] * (
             f01(vtl * ttl     , pvalThreshold[3]) +
@@ -432,7 +432,7 @@ tv.test = function(obj                           ,
     pal       =     al0$ol >= ifelse(name == 'l', mimi, 0)
     pmin      = min(al0$tp.pval[pal], Inf, na.rm = TRUE)
     final     =    (al0$l[pal & (al0$tp.pval %in% pmin)])[1]
-    
+
     if (is.null(final)      ||
         is.null(pmin)       ||
         length(final) < 1   ||

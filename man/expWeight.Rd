@@ -22,7 +22,7 @@
 }
 \arguments{
   \item{t}{
-    Vector of numeric time. A vector of positive continuous values for time 
+    Vector of numeric time. A vector of positive continuous values for time
   }
   \item{k}{
     A single positive value for sharpness
@@ -32,9 +32,9 @@
   }
   \item{m}{
     Vector of indices. The index of the modes on `t` (modes are the peak of the windows)
-  }  
+  }
   \item{direction}{
-  Vector of two numeric values. A vector of the form on (Left,right). The first element specifies the speed of expansion of the window(s) from the left and the second value for the right expansion. Setting to (0,1) and (1,0) lead to right and left expansions of the windows respectively. Default (1,1) that is the window(s) expand symmetrically from both sides. 
+  Vector of two numeric values. A vector of the form on (Left,right). The first element specifies the speed of expansion of the window(s) from the left and the second value for the right expansion. Setting to (0,1) and (1,0) lead to right and left expansions of the windows respectively. Default (1,1) that is the window(s) expand symmetrically from both sides.
   }
   \item{plot}{
     Logical flag. Setting to TRUE shows a plot of the weights
@@ -49,7 +49,7 @@
              a = mean - sqrt(3) *sd;
              b = mean + sqrt(3) *sd;
              r =  punif(q = x,min = a,max = b) ;
-             return(r)    
+             return(r)
           }
     }
   }
@@ -61,18 +61,18 @@
   }
 }
 \value{
-  A numeric vector of weights
+  A numeric vector of length \code{length(t)} giving merged soft-window weights in \eqn{[0,1]} (after scaling within the observed range). Values are observation weights suitable for passing to weighted model fitting.
 }
 
 \author{
-  Hamed Haselimashhadi <hamedhm@ebi.ac.uk>
+  Hamed Haselimashhadi <hamedhaseli@gmail.com>
 }
 
 \seealso{
   \code{\link{SmoothWin}}
 }
 \examples{
-  par(mfrow = c(4, 1))
+  oldpar <- par(mfrow = c(4, 1))
   ##################################################
   # Example 1 - no merging happends between windows
   ##################################################
@@ -88,7 +88,7 @@
     lwd = 3                                         ,
     main = '1. If windows do not intersect, then wont merge! (l=10, k=5)'
   )
-  
+
   ##################################################
   # Example 2 - merging in windows
   ##################################################
@@ -104,7 +104,7 @@
     lwd = 3                                         ,
     main = '2. If windows intersect, then merge! (l=15, k=5)'
   )
-  
+
   ##################################################
   # Example 3.1  - partial merging in windows
   ##################################################
@@ -120,7 +120,7 @@
     lwd = 3                                         ,
     main = '3.1 If windows intersect with small k, then partially merge! (l=12, k=1)'
   )
-  
+
   ##################################################
   # Example 3.2  - partial merging in windows
   ##################################################
@@ -136,6 +136,7 @@
     lwd = 3                                         ,
     main = '3.2 If windows intersect with small k, then partially merge! (l=12, k=0.1)'
   )
-  
+
+  par(oldpar)
 }
 

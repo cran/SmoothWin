@@ -3,7 +3,7 @@ SmoothWin = function(object                                           ,
                      t                                                ,
                      m                                                ,
                      l = function(ignore.me.in.default) {
-                       r = SmoothWin:::lseq(
+                       r = lseq(
                          from = 1                                          ,
                          to = max(abs(t[m] - min(t, na.rm = TRUE)), abs(t[m] - max(t, na.rm = TRUE)), 1),
                          length.out = min(500, max(1, diff(range(
@@ -13,7 +13,7 @@ SmoothWin = function(object                                           ,
                        r = unique(round(r))
                        return(r)
                      },
-                     k = SmoothWin:::lseq(from = .5                   ,
+                     k =             lseq(from = .5                   ,
                                           to = 10                     ,
                                           length.out = 50)            ,
                      min.obs   = function(ignore.me.in.default) {
@@ -237,7 +237,7 @@ plot.SmoothWin = function(x,
     return(invisible(list(
       weight = wp   ,
       k = x$final.k ,
-      l = x$final.k ,
+      l = x$final.l ,
       object = x
     )))
   } else{

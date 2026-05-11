@@ -16,9 +16,9 @@ SmoothWin(object                                          ,
          t                                                ,
          m                                                ,
          l = function(ignore.me.in.default) {
-           r = SmoothWin:::lseq(
+            r = lseq(
              from = 1                                     ,
-             to = max(abs(t[m] - min(t, na.rm = TRUE))    , 
+             to = max(abs(t[m] - min(t, na.rm = TRUE))    ,
              abs(t[m] - max(t, na.rm = TRUE)), 1)         ,
              length.out = min(500, max(1, diff(range(
                t,na.rm = TRUE
@@ -27,7 +27,7 @@ SmoothWin(object                                          ,
            r = unique(round(r))
            return(r)
          }                                                ,
-         k = SmoothWin:::lseq(from = .5                   ,
+         k =             lseq(from = .5                   ,
                               to = 10                     ,
                               length.out = 50)            ,
          min.obs   = function(ignore.me.in.default) {
@@ -58,7 +58,7 @@ SmoothWin(object                                          ,
          seed          = NULL                             ,
          simple.output = FALSE                            ,
          debug         = FALSE                            ,
-         ...) 
+         ...)
    }
 \arguments{
   \item{object}{
@@ -89,10 +89,10 @@ SmoothWin(object                                          ,
   **** if weightORthreshold='weight' then min.obs will be evaluated against SWS\cr\cr
 }
   \item{direction}{
-  Vector of two non-negative values. A non-negative vector of the form c(Left,right), for example c(1,1) [default] or c(0.5,0.5) or c(0,1). The first element specifies the speed of expansion of the window(s) from the left and the second value for the right expansion. Setting to c(0,1) and c(1,0) lead to right and left expansions of the window(s) respectively. Default c(1,1) that is the window(s) expand symmetrically from both sides. 
+  Vector of two non-negative values. A non-negative vector of the form c(Left,right), for example c(1,1) [default] or c(0.5,0.5) or c(0,1). The first element specifies the speed of expansion of the window(s) from the left and the second value for the right expansion. Setting to c(0,1) and c(1,0) lead to right and left expansions of the window(s) respectively. Default c(1,1) that is the window(s) expand symmetrically from both sides.
   }
   \item{weightFUN}{
-  Weight function. By default, a vector of weights called "ModelWeight" is passed to this function. See the examples. 
+  Weight function. By default, a vector of weights called "ModelWeight" is passed to this function. See the examples.
 }
   \item{residFun}{
   Residual computation function. The default is `resid()`. However, the the user can define its own function. Note that the input of the function is the model object. The default is residFun = function(object)\{resid(object)\}
@@ -106,9 +106,9 @@ SmoothWin(object                                          ,
   \item{cdf}{
   A cdf function preferably symmetric. The cdf function is used for the (window) weight generating function (WGF). The cdf function must have two parameters precisely a location such as mean and a scale. Standard cdf functions such as `pnorm`, `pcauchy` and `plogis` (default) can be used. For an example of custom made function we define uniform function as below:\cr\cr
    \eqn{punif0 = function(x,mean=.5,sd=sqrt(1/12)){
-         a = mean - sqrt(3) *sd; 
-         b = mean + sqrt(3) *sd; 
-      r =  punif(q = x,min = a,max = b);  
+         a = mean - sqrt(3) *sd;
+         b = mean + sqrt(3) *sd;
+      r =  punif(q = x,min = a,max = b);
       return(r)
     }
     }
@@ -116,12 +116,12 @@ SmoothWin(object                                          ,
   \item{check}{
   Single integer in \{0,1,2\}: \cr\cr
   - check=1, the function selects the times (t) with more than one observations. Further, the function only selects the values with weights greater than the `threshold` (see threshold below). Mostly useful in fitting linear mixed model\cr\cr
-  - check=2 (default), the function only selects the values with weights greater than the `threshold` parameter\cr\cr 
+  - check=2 (default), the function only selects the values with weights greater than the `threshold` parameter\cr\cr
   - check=0, disables all checks
 }
   \item{sensitivity}{
   (Default window selection criteria) Vector of four values (m, v, m*v, normality_test). For example (default) c(1,1,1,0) specifies the same weights for mean, variance, mean*variance interaction and zero weight for the test of normality (shapiro.test) in determining the optimal (final) window. We should stress that the window size is calculated by detecting the changes amongst the consecutive means (two sample t.test) and variances (two sample var.test) (as well as the normality of the first set) from each of predictFun() and residFun() combined together. For example, (m, v, m*v, normality_test) is calculated for predictFun() and the same for residFun(), then two means are combined under the `sensitivity`[1]; and the same for variance, interactions and the normality.
-  }  
+  }
   \item{pvalThreshold}{
   Vector of four values. It would be used as the significant level for the mean, variation and normality tests (for more details see `sensitivity` above). If all zero (default) or (all) negative (<= 0) then the internal adaptive method (sensitivity - see above) would be used.
   }
@@ -150,13 +150,19 @@ SmoothWin(object                                          ,
 
 
 \value{
-  \item{final.k, final.l }{Final values for k and l}
-  \item{model.l, model.k, finalModel}{List of models for l, k and the final model. }
-  \item{others}{The input parameters such as x, y, t and so on}
+  An object of class \code{"SmoothWin"} (a list) containing the fitted window and all objects needed to inspect or plot it.
+
+  \item{object}{The original model object passed in.}
+  \item{data}{The \code{data} argument.}
+  \item{final.k, final.l}{Lists describing the selected sharpness (\code{k}) and bandwidth (\code{l}), including at least \code{value} (chosen parameter) and \code{score} (diagnostic score, possibly \code{NA}).}
+  \item{finalModel}{Result of the final weighted refit at the chosen \code{(l, k)}: includes the updated model, merged weights, and summary output such as effective observation count in the window.}
+  \item{model.l, model.k}{Lists of intermediate fits over the \code{l} and \code{k} grids (omitted if \code{simple.output = TRUE}).}
+  \item{min.obs}{The minimum observation / sum-of-weights constraint used.}
+  \item{input}{Captured call arguments (including resolved \code{l}, \code{k}, \code{t}, \code{m}, etc.) for reproducibility and plotting.}
 }
 
 \author{
-  Hamed Haselimashhadi <hamedhm@ebi.ac.uk>
+  Hamed Haselimashhadi <hamedhaseli@gmail.com>
 }
 
 
@@ -169,7 +175,7 @@ SmoothWin(object                                          ,
 #################### Example in the manuscript
 #################################################
 set.seed(1234)
-par(mfrow = c(3, 1))
+oldpar <- par(mfrow = c(3, 1))
 #############################
 # Simulating data
 #############################
@@ -355,6 +361,7 @@ plot(
   main = 'Linear mixed model'
 )
 
+par(oldpar)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
